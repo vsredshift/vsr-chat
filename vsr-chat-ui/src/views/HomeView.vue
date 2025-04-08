@@ -1,18 +1,45 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import robot from "../assets/robot-assistant.png";
+import { useRouter } from "vue-router";
+import { useUserStore } from "@/stores/user";
+import axios from "axios";
+
+const router = useRouter()
+const userStore = useUserStore();
 
 const name = ref("")
 const email = ref("")
 const loading = ref(false)
-const error = ref("")
+const errorMessage = ref("")
 
 const createUser = async () => {
     if (!name.value || !email.value) {
-        error.value = "Name and email are required";
+        errorMessage.value = "Name and email are required";
         return;
     }
-    console.log(name.value, email.value)
+
+    loading.value = true;
+    errorMessage.value = "";
+
+    try {
+        const { data } = await axios.post(`${import.meta.env.VITE_API_URL}/register`, {
+            name: name.value,
+            email: email.value,
+        });
+
+        userStore.setUser({
+            userId: data.userId,
+            name: data.name,
+        })
+
+        router.push("/chat")
+    } catch (error) {
+        errorMessage.value = "Something went wrong. Try again"
+    } finally {
+        loading.value = false;
+    }
+
 }
 </script>
 
@@ -35,7 +62,7 @@ const createUser = async () => {
                 {{ loading ? "Logging in..." : "Start Chat" }}
             </button>
 
-            <p v-if="error" class="text-red-400 text-center mt-2">{{ error }}</p>
+            <p v-if="errorMessage" class="text-red-400 text-center mt-2">{{ errorMessage }}</p>
         </div>
     </div>
 </template>
