@@ -63,7 +63,7 @@ app.post("/register", async (req: Request, res: Response): Promise<any> => {
     const existingUser = await db
       .select()
       .from(users)
-      .where(eq(users.userId, userId));
+      .where(eq(users.email, email));
 
     if (!existingUser.length) {
       console.log(`Adding ${userId} to the database...`);
