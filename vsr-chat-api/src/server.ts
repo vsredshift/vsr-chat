@@ -8,7 +8,6 @@ import { v4 as uuid4 } from "uuid";
 import { db } from "./config/database.js";
 import { eq } from "drizzle-orm";
 import { chats, users } from "./db/schema.js";
-import { error } from "console";
 
 dotenv.config();
 
@@ -47,7 +46,7 @@ app.post("/register", async (req: Request, res: Response): Promise<any> => {
     const userId = uuid4();
 
     const { users: streamUsers } = await chatClient.queryUsers({
-      id: { $eq: userId },
+      email: { $eq: email },
     });
 
     if (!streamUsers.length) {
