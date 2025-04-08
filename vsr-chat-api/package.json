@@ -11,8 +11,11 @@
   "author": "Martin O'Shaughnessy",
   "license": "MIT",
   "dependencies": {
+    "@google/genai": "^0.7.0",
+    "@neondatabase/serverless": "^1.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
+    "drizzle-orm": "^0.41.0",
     "express": "^5.1.0",
     "openai": "^4.92.0",
     "stream-chat": "^8.58.0",
@@ -22,6 +25,7 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.1",
     "@types/node": "^22.14.0",
+    "drizzle-kit": "^0.30.6",
     "tsx": "^4.19.3",
     "typescript": "^5.8.3"
   }
