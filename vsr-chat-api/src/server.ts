@@ -5,6 +5,10 @@ import { StreamChat } from "stream-chat";
 import OpenAI from "openai";
 import { GoogleGenAI } from "@google/genai";
 import { v4 as uuid4 } from "uuid";
+import { db } from "./config/database.js";
+import { eq } from "drizzle-orm";
+import { chats, users } from "./db/schema.js";
+import { error } from "console";
 
 dotenv.config();
 
@@ -42,9 +46,11 @@ app.post("/register", async (req: Request, res: Response): Promise<any> => {
   try {
     const userId = uuid4();
 
-    const { users } = await chatClient.queryUsers({ id: { $eq: userId } });
+    const { users: streamUsers } = await chatClient.queryUsers({
+      id: { $eq: userId },
+    });
 
-    if (!users.length) {
+    if (!streamUsers.length) {
       // Add new user to Stream
       await chatClient.upsertUser({
         id: userId,
@@ -52,6 +58,17 @@ app.post("/register", async (req: Request, res: Response): Promise<any> => {
         email,
         role: "user",
       });
+    }
+
+    // Check for user in db
+    const existingUser = await db
+      .select()
+      .from(users)
+      .where(eq(users.userId, userId));
+
+    if (!existingUser.length) {
+      console.log(`Adding ${userId} to the database...`);
+      await db.insert(users).values({ userId, name, email });
     }
 
     res.status(201).json({ userId, name, email });
@@ -69,12 +86,24 @@ app.post("/chat", async (req: Request, res: Response): Promise<any> => {
   }
 
   try {
-    const { users } = await chatClient.queryUsers({ id: userId });
+    const { users: streamUsers } = await chatClient.queryUsers({ id: userId });
 
-    if (!users.length) {
+    if (!streamUsers.length) {
       return res
         .status(404)
         .json({ error: "User not found. Please register first." });
+    }
+
+    // Check for user in database
+    const existingUser = await db
+      .select()
+      .from(users)
+      .where(eq(users.userId, userId));
+
+    if (!existingUser.length) {
+      return res
+        .status(404)
+        .json({ error: "User not found in database, please register" });
     }
 
     // Post message to Open AI GPT-4
@@ -91,6 +120,9 @@ app.post("/chat", async (req: Request, res: Response): Promise<any> => {
 
     const aiMessage: string = response.text ?? "No response from chat bot";
 
+    // Save chat to database
+    await db.insert(chats).values({ userId, message, reply: aiMessage });
+
     // Create or fetch channel
     const channel = chatClient.channel("messaging", `chat-${userId}`, {
       name: "AI Chat",
@@ -103,6 +135,26 @@ app.post("/chat", async (req: Request, res: Response): Promise<any> => {
     res.status(200).json({ reply: aiMessage });
   } catch (error) {
     console.log("Error generating ai response", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+app.post("/get-messages", async (req: Request, res: Response): Promise<any> => {
+  const { userId } = req.body || {};
+
+  if (!userId) {
+    return res.status(400).json({ error: "User ID is requierd" });
+  }
+
+  try {
+    const chatHistory = await db
+      .select()
+      .from(chats)
+      .where(eq(chats.userId, userId));
+
+    res.status(200).json({ messages: chatHistory });
+  } catch (error) {
+    console.log("Error fetching chat history", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
