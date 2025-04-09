@@ -57,7 +57,6 @@ app.post("/register", async (req: Request, res: Response): Promise<any> => {
         role: "user",
       });
     }
-    console.log(userResponse)
 
     // Check for existing user in database
     const existingUser = await db
@@ -65,7 +64,6 @@ app.post("/register", async (req: Request, res: Response): Promise<any> => {
       .from(users)
       .where(eq(users.userId, userId));
 
-      console.log(existingUser)
     if (!existingUser.length) {
       console.log(
         `User ${userId} does not exist in the database. Adding them...`

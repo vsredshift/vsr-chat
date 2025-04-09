@@ -28,7 +28,6 @@ const createUser = async () => {
             email: email.value,
         });
 
-        console.log(data)
         userStore.setUser({
             userId: data.userId,
             name: data.name,

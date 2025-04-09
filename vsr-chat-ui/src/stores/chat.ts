@@ -14,7 +14,7 @@ interface FormattedMessage {
 }
 
 export const useChatStore = defineStore("chat", () => {
-  const messages = ref<{ role: string; content: string }>([]);
+  const messages = ref<{ role: string; content: string }[]>([]);
   const isLoading = ref(false);
 
   const userStore = useUserStore();
@@ -40,5 +40,33 @@ export const useChatStore = defineStore("chat", () => {
     } catch (error) {}
   };
 
-  return { messages, isLoading, loadChatHistory };
+  // Post message to Chat Bot
+  const sendMessage = async (message: string) => {
+    if (!message.trim() || !userStore.userId) return;
+
+    messages.value.push({ role: "user", content: message });
+    isLoading.value = true;
+
+    try {
+      const { data } = await axios.post(
+        `${import.meta.env.VITE_API_URL}/chat`,
+        {
+          message,
+          userId: userStore.userId,
+        }
+      );
+
+      messages.value.push({ role: "ai", content: data.reply });
+    } catch (error) {
+      console.error("Error sending message", error);
+      messages.value.push({
+        role: "ai",
+        content: "Error: unable to process request",
+      });
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  return { messages, isLoading, loadChatHistory, sendMessage };
 });
