@@ -43,34 +43,35 @@ app.post("/register", async (req: Request, res: Response): Promise<any> => {
   }
 
   try {
-    const userId = uuid4();
+    const userId = email.replace(/[^a-zA-Z0-9_-]/g, "_");
 
-    const { users: streamUsers } = await chatClient.queryUsers({
-      email: { $eq: email },
-    });
+    // Check if user exists
+    const userResponse = await chatClient.queryUsers({ id: { $eq: userId } });
 
-    if (!streamUsers.length) {
-      // Add new user to Stream
+    if (!userResponse.users.length) {
+      // Add new user to stream
       await chatClient.upsertUser({
         id: userId,
-        name,
-        email,
+        name: name,
+        email: email,
         role: "user",
       });
     }
 
-    // Check for user in db
+    // Check for existing user in database
     const existingUser = await db
       .select()
       .from(users)
       .where(eq(users.userId, userId));
 
     if (!existingUser.length) {
-      console.log(`Adding ${userId} to the database...`);
+      console.log(
+        `User ${userId} does not exist in the database. Adding them...`
+      );
       await db.insert(users).values({ userId, name, email });
     }
 
-    res.status(201).json({ userId, name, email });
+    res.status(200).json({ userId, name, email });
   } catch (error) {
     res.status(500).json({ error: "Internal Server Error" });
   }
