@@ -8,6 +8,7 @@ import { v4 as uuid4 } from "uuid";
 import { db } from "./config/database.js";
 import { eq } from "drizzle-orm";
 import { chats, users } from "./db/schema.js";
+import { text } from "stream/consumers";
 
 dotenv.config();
 
@@ -33,6 +34,11 @@ const openai = new OpenAI({
 const gemini = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
+
+type GenerativeChatMessage = {
+  role: "user" | "model";
+  parts: Array<{ text: string }>;
+};
 
 // Register user with Stream Chat
 app.post("/register", async (req: Request, res: Response): Promise<any> => {
@@ -106,6 +112,24 @@ app.post("/chat", async (req: Request, res: Response): Promise<any> => {
         .json({ error: "User not found in database, please register" });
     }
 
+    // Get chat history for context
+    const chatHistory = await db
+      .select()
+      .from(chats)
+      .where(eq(chats.userId, userId))
+      .orderBy(chats.createdAt)
+      .limit(6);
+
+    // Format chat history
+    const conversation: GenerativeChatMessage[] = chatHistory.flatMap(
+      (chat) => [
+        { role: "user", parts: [{ text: chat.message }] },
+        { role: "model", parts: [{ text: chat.reply }] },
+      ]
+    );
+
+    conversation.push({ role: "user", parts: [{ text: message }] });
+
     // Post message to Open AI GPT-4
     // const response = await openai.chat.completions.create({
     //   model: "gpt-4",
@@ -115,7 +139,7 @@ app.post("/chat", async (req: Request, res: Response): Promise<any> => {
     // Post message to Gemini API
     const response = await gemini.models.generateContent({
       model: "gemini-2.0-flash",
-      contents: message,
+      contents: conversation,
     });
 
     const aiMessage: string = response.text ?? "No response from chat bot";

@@ -54,7 +54,7 @@ const createUser = async () => {
             <input v-model="name" type="text"
                 class="w-full p-2 mb-2 bg-gray-700 text-white rounded-lg focus:outline-none" placeholder="Name"
                 required>
-            <input v-model="email" type="email"
+            <input @keyup.enter="createUser" v-model="email" type="email"
                 class="w-full p-2 mb-2 bg-gray-700 text-white rounded-lg focus:outline-none" placeholder="Email"
                 required>
 
