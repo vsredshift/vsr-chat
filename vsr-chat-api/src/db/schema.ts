@@ -9,7 +9,7 @@ export const chats = pgTable("chats", {
 });
 
 export const users = pgTable("users", {
-  userId: uuid("user_id").primaryKey(),
+  userId: text("user_id").primaryKey(),
   name: text("name").notNull(),
   email: text("email").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),

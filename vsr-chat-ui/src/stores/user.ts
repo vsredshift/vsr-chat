@@ -8,7 +8,7 @@ export const useUserStore = defineStore("user", {
   actions: {
     setUser(data: { userId: string; name: string }) {
       this.userId = data.userId;
-      this.name;
+      this.name = data.name;
     },
     logout() {
       this.userId = null;
