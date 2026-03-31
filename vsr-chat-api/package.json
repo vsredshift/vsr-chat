@@ -16,7 +16,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "drizzle-orm": "^0.41.0",
-    "express": "^5.1.0",
+    "express": "^5.2.0",
     "openai": "^4.92.0",
     "stream-chat": "^8.58.0",
     "uuid": "^11.1.0"
